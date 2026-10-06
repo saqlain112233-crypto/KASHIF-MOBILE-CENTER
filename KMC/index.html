@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kashif Mobile Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  html { background: linear-gradient(135deg, #0f172a, #1e3a8a) fixed; scroll-behavior: smooth; }
+  body { margin: 0; background: transparent; font-family: 'Inter', system-ui, sans-serif; }
+  select option { color: #000; }
+  .bg-video { transition: opacity .8s ease; }
+  .fade-item { opacity: 0; transform: translateY(12px); transition: opacity .8s ease, transform .8s ease; }
+  .fade-item.show { opacity: 1; transform: none; }
+  .word { display: inline-block; opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s cubic-bezier(.22,1,.36,1); }
+  .word.show { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .fade-item, .word { transition: none; opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body class="text-white antialiased">
+
+<!-- Background layers (video or photo, set from admin) -->
+<video id="bg1" class="bg-video fixed inset-0 w-full h-full object-cover -z-20 pointer-events-none" style="opacity:0" autoplay loop muted playsinline preload="auto"></video>
+<img id="bg1i" class="bg-video fixed inset-0 w-full h-full object-cover -z-20 pointer-events-none" style="opacity:0" alt="">
+<video id="bg2" class="bg-video fixed inset-0 w-full h-full object-cover -z-20 pointer-events-none" style="opacity:0" loop muted playsinline preload="none"></video>
+<img id="bg2i" class="bg-video fixed inset-0 w-full h-full object-cover -z-20 pointer-events-none" style="opacity:0" alt="">
+<div id="overlay" class="fixed inset-0 -z-10 bg-black pointer-events-none" style="opacity:.25"></div>
+
+<!-- Header -->
+<header id="header" class="fade-item absolute top-0 inset-x-0 z-10 flex items-center justify-between px-6 md:px-12 py-6">
+  <a href="#" aria-label="Kashif Mobile Center"><img src="logo.svg" alt="Kashif Mobile Center" class="h-10 md:h-12 w-auto"></a>
+  <nav class="hidden md:flex items-center gap-10 text-sm text-white">
+    <a href="#products" class="hover:opacity-70 transition-opacity">Products</a>
+    <a href="#delivery" class="hover:opacity-70 transition-opacity">Delivery</a>
+    <a href="#contact" class="hover:opacity-70 transition-opacity">Contact</a>
+  </nav>
+  <div class="flex items-center gap-3">
+    <a id="wa-top" href="#" target="_blank" rel="noopener" class="hidden sm:inline-block rounded-full bg-white text-black text-sm font-medium px-5 py-2.5 hover:bg-white/90 transition-colors">WhatsApp us</a>
+    <button id="menu-btn" aria-label="Menu" class="grid h-11 w-11 place-items-center rounded-full border border-white/30 bg-white/10 backdrop-blur-md md:hidden">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div id="mobile-menu" class="hidden absolute top-full inset-x-4 rounded-2xl border border-white/15 bg-[#0b1220]/95 p-3 backdrop-blur-md md:hidden">
+    <a href="#products" class="block rounded-xl px-4 py-3 text-sm hover:bg-white/10">Products</a>
+    <a href="#delivery" class="block rounded-xl px-4 py-3 text-sm hover:bg-white/10">Delivery &amp; Payment</a>
+    <a href="#contact" class="block rounded-xl px-4 py-3 text-sm hover:bg-white/10">Contact</a>
+    <a id="wa-menu" href="#" target="_blank" rel="noopener" class="mt-2 block rounded-full bg-white px-4 py-3 text-center text-sm font-medium text-black">WhatsApp pe order karein</a>
+  </div>
+</header>
+
+<!-- Hero -->
+<main class="min-h-screen flex items-center px-6 md:px-12">
+  <div class="max-w-3xl">
+    <p id="label" class="fade-item text-sm text-white mb-5">| Retail &amp; Wholesale</p>
+
+    <h1 id="heading" class="font-medium text-white leading-[1.08] tracking-tight text-[40px] sm:text-[48px] md:text-[62px]">
+      <span class="block" data-line>Mobile accessories,</span>
+      <span class="block" data-line>delivered all over</span>
+      <span class="block" data-line>Pakistan.</span>
+    </h1>
+
+    <div id="stars" class="fade-item flex items-center gap-2 mt-7 text-sm text-white">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+      <span id="hero-sub">Delivery in 4-5 days, Cash on Delivery available</span>
+    </div>
+
+    <div id="buttons" class="fade-item flex flex-wrap items-center gap-3 mt-8">
+      <a id="wa-main" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-3 rounded-full bg-white text-black text-sm font-medium pl-5 pr-1.5 py-1.5 hover:bg-white/90 transition-colors">
+        <span id="btn1-text">Order on WhatsApp</span>
+        <span class="grid place-items-center w-8 h-8 rounded-full bg-black">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+      <a id="btn2" href="#products" class="rounded-full border border-white/30 bg-white/10 backdrop-blur-md text-white text-sm font-medium px-6 py-3 hover:bg-white/20 transition-colors">View Products</a>
+    </div>
+  </div>
+</main>
+
+<!-- Products -->
+<section id="products" class="relative z-10 bg-[#0b1220]/55 backdrop-blur-md px-6 md:px-12 py-20">
+  <h2 class="text-3xl md:text-4xl font-medium text-white">Our Products</h2>
+  <p class="mt-2 text-sm text-white/60">Retail aur wholesale dono. Cart mein add karo, phir WhatsApp pe order bhejo.</p>
+  <div class="mt-6 flex flex-col gap-3 md:flex-row md:items-center">
+    <input id="search" type="search" placeholder="Product dhoondein..." class="w-full md:max-w-xs rounded-full bg-white/10 border border-white/15 px-5 py-2.5 text-sm text-white placeholder-white/40 outline-none focus:border-cyan-300">
+    <div id="cats" class="flex flex-wrap gap-2"></div>
+  </div>
+  <p id="no-results" style="display:none" class="mt-10 text-center text-sm text-white/50">Koi product nahi mila.</p>
+  <div id="product-grid" class="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"></div>
+</section>
+
+<!-- Delivery -->
+<section id="delivery" class="relative z-10 bg-[#0b1220]/55 backdrop-blur-md px-6 md:px-12 py-20 border-t border-white/10">
+  <h2 class="text-3xl md:text-4xl font-medium text-white">Delivery &amp; Payment</h2>
+  <div class="mt-8 grid md:grid-cols-2 gap-10">
+    <div class="space-y-5">
+      <p><span class="block text-sm text-white/50">Delivery time</span><span id="d-time" class="text-lg text-white"></span></p>
+      <p><span class="block text-sm text-white/50">Payment options</span><span id="d-pay" class="text-lg text-white"></span></p>
+      <p><span class="block text-sm text-white/50">Wholesale minimum</span><span id="d-min" class="text-lg text-white"></span></p>
+    </div>
+    <div>
+      <h3 class="text-sm text-white/50 mb-2">Delivery charges by city</h3>
+      <div id="rates"></div>
+      <p class="mt-3 text-xs text-white/50">Doosre shehar ke charges WhatsApp pe confirm honge.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Contact -->
+<section id="contact" class="relative z-10 bg-[#0b1220]/70 backdrop-blur-md px-6 md:px-12 py-16 border-t border-white/10">
+  <h2 class="text-3xl md:text-4xl font-medium text-white">Contact</h2>
+  <p id="c-address" class="mt-4 text-white/80"></p>
+  <a id="c-wa" href="#" target="_blank" rel="noopener" class="mt-6 inline-block rounded-full bg-white text-black text-sm font-medium px-6 py-3 hover:bg-white/90 transition-colors">Chat on WhatsApp</a>
+</section>
+
+<!-- Footer -->
+<footer class="relative z-10 bg-[#0b1220]/80 backdrop-blur-md border-t border-white/10 px-6 md:px-12 py-10">
+  <div class="grid gap-8 md:grid-cols-3">
+    <div>
+      <img src="logo.svg" alt="Kashif Mobile Center" class="h-10 w-auto">
+      <p class="mt-3 text-sm text-white/60">Mobile accessories aur electronics. Retail aur wholesale, poore Pakistan mein delivery.</p>
+    </div>
+    <div class="text-sm">
+      <p class="text-white/50">Dukaan</p>
+      <p id="f-address" class="mt-1 text-white/80"></p>
+      <p id="f-hours" class="mt-2 text-white/80" style="display:none"></p>
+      <p class="mt-2 text-white/80">WhatsApp: <a id="f-wa" href="#" target="_blank" rel="noopener" class="text-cyan-300 hover:underline"><span id="f-phone"></span></a></p>
+    </div>
+    <div class="text-sm">
+      <p class="text-white/50">Links</p>
+      <ul class="mt-1 space-y-1 text-white/80">
+        <li><a href="#products" class="hover:text-white">Products</a></li>
+        <li><a href="#delivery" class="hover:text-white">Delivery &amp; Payment</a></li>
+        <li><a href="#contact" class="hover:text-white">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="mt-8 border-t border-white/10 pt-5 text-xs text-white/40">&copy; <span id="f-year"></span> Kashif Mobile Center. All rights reserved.</p>
+</footer>
+
+<!-- Floating WhatsApp button -->
+<a id="wa-float" href="#" target="_blank" rel="noopener" aria-label="WhatsApp pe chat karein" class="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] shadow-lg shadow-black/40 transition-transform hover:scale-110">
+  <svg class="h-7 w-7" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+</a>
+
+<!-- Floating cart button -->
+<button id="cart-btn" aria-label="Cart kholein" class="fixed bottom-24 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition-transform hover:scale-110">
+  <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
+  <span id="cart-badge" style="display:none" class="absolute -right-1 -top-1 h-6 min-w-[1.5rem] place-items-center rounded-full bg-cyan-400 px-1 text-xs font-medium text-black">0</span>
+</button>
+
+<!-- Small message -->
+<div id="toast" class="fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black shadow-lg transition-opacity" style="opacity:0;pointer-events:none"></div>
+
+<!-- Cart popup -->
+<div id="order-modal" class="hidden fixed inset-0 z-50 items-end md:items-center justify-center bg-black/70 md:p-6">
+  <div class="w-full max-w-md max-h-[92vh] overflow-y-auto rounded-t-3xl md:rounded-3xl bg-[#0b1220] border border-white/10 p-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-medium text-white">Aapka Cart</h3>
+      <button id="o-close" class="text-3xl leading-none text-white/60 hover:text-white" aria-label="Close">&times;</button>
+    </div>
+
+    <div id="cart-items" class="mt-4 space-y-3"></div>
+
+    <div id="checkout" class="mt-5" style="display:none">
+      <div class="space-y-3">
+        <input id="o-name" type="text" placeholder="Aapka naam" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:border-cyan-300">
+        <input id="o-phone" type="tel" placeholder="Phone number (03XX XXXXXXX)" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:border-cyan-300">
+        <select id="o-city" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300">
+          <option value="">Shehar chunein</option>
+        </select>
+        <textarea id="o-address" rows="2" placeholder="Poora address" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:border-cyan-300"></textarea>
+        <select id="o-pay" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"></select>
+      </div>
+      <div class="mt-5 rounded-xl bg-white/5 border border-white/10 p-4 text-sm space-y-2">
+        <div class="flex justify-between"><span class="text-white/60">Products</span><span id="o-sub"></span></div>
+        <div class="flex justify-between"><span class="text-white/60">Delivery</span><span id="o-del">-</span></div>
+        <div class="flex justify-between text-base font-medium border-t border-white/10 pt-2"><span>Total</span><span id="o-total" class="text-cyan-300"></span></div>
+      </div>
+      <p id="o-err" class="mt-3 text-sm text-red-300"></p>
+      <button id="o-confirm" class="mt-3 w-full rounded-full bg-white text-black text-sm font-medium py-3 hover:bg-white/90 transition-colors">Confirm Order on WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="products.js"></script>
+<script>
+  // ---------- Shop details ----------
+  const shop = (typeof SHOP !== 'undefined') ? SHOP : { name: 'Kashif Mobile Center', whatsapp: '923359710098' };
+  const rates = (typeof DELIVERY !== 'undefined') ? DELIVERY : {};
+  const payments = shop.payments || ['Cash on Delivery'];
+  const money = n => 'Rs ' + Number(n).toLocaleString();
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const $ = id => document.getElementById(id);
+
+  document.title = shop.name;
+  const waLink = 'https://wa.me/' + shop.whatsapp + '?text=' + encodeURIComponent('Assalam o Alaikum, mujhe order karna hai.');
+  ['wa-top', 'wa-main', 'wa-menu', 'c-wa', 'f-wa', 'wa-float'].forEach(id => $(id).href = waLink);
+
+  $('d-time').textContent = shop.deliveryTime || '4-5 din';
+  $('d-pay').textContent = payments.join(', ');
+  $('d-min').textContent = shop.wholesaleMin || '';
+  $('c-address').textContent = shop.address || '';
+  $('f-address').textContent = shop.address || '';
+  $('f-phone').textContent = shop.whatsapp && shop.whatsapp.startsWith('92') ? '0' + shop.whatsapp.slice(2) : (shop.whatsapp || '');
+  $('f-year').textContent = new Date().getFullYear();
+  if (shop.hours) {
+    $('f-hours').textContent = 'Time: ' + shop.hours;
+    $('f-hours').style.display = 'block';
+  }
+  Object.keys(rates).forEach(c => {
+    $('rates').insertAdjacentHTML('beforeend',
+      '<div class="flex justify-between border-b border-white/10 py-2 text-sm"><span>' + c + '</span><span class="text-cyan-300">' + money(rates[c]) + '</span></div>');
+  });
+
+  // ---------- Cart ----------
+  const modal = $('order-modal');
+  const citySel = $('o-city');
+  const paySel = $('o-pay');
+  Object.keys(rates).forEach(c => citySel.add(new Option(c + ' (Rs ' + rates[c] + ')', c)));
+  citySel.add(new Option('Other city (charges WhatsApp pe confirm)', 'Other'));
+  payments.forEach(p => paySel.add(new Option(p, p)));
+
+  let cart = [];
+  try { cart = JSON.parse(localStorage.getItem('kmc-cart') || '[]'); } catch (e) { cart = []; }
+  let items = [];
+  let toastTimer;
+
+  const saveCart = () => { try { localStorage.setItem('kmc-cart', JSON.stringify(cart)); } catch (e) {} };
+  const cartCount = () => cart.reduce((s, i) => s + i.qty, 0);
+  const cartSub = () => cart.reduce((s, i) => s + i.qty * i.price, 0);
+
+  function updateBadge() {
+    const n = cartCount();
+    $('cart-badge').textContent = n;
+    $('cart-badge').style.display = n ? 'grid' : 'none';
+  }
+
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.style.opacity = 1;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.style.opacity = 0; }, 1800);
+  }
+
+  function addToCart(p) {
+    const found = cart.find(i => String(i.id) === String(p.id));
+    if (found) found.qty += 1;
+    else cart.push({ id: p.id, name: p.name, price: Number(p.price), qty: 1 });
+    saveCart();
+    updateBadge();
+    toast(p.name + ' cart mein add ho gaya');
+  }
+
+  function recalc() {
+    const city = citySel.value;
+    const sub = cartSub();
+    const del = rates[city];
+    $('o-sub').textContent = money(sub);
+    $('o-del').textContent = !city ? '-' : (del === undefined ? 'WhatsApp pe confirm' : money(del));
+    $('o-total').textContent = money(sub + (del || 0)) + (city && del === undefined ? ' + delivery' : '');
+  }
+
+  function renderCart() {
+    const box = $('cart-items');
+    box.innerHTML = '';
+    if (!cart.length) {
+      box.innerHTML = '<p class="py-6 text-center text-sm text-white/50">Cart khali hai. Products mein se Add to Cart dabao.</p>';
+      $('checkout').style.display = 'none';
+      return;
+    }
+    $('checkout').style.display = 'block';
+    cart.forEach(i => {
+      const row = document.createElement('div');
+      row.className = 'rounded-xl border border-white/10 bg-white/5 p-3';
+      row.innerHTML =
+        '<div class="flex items-start justify-between gap-3">' +
+          '<p class="text-sm font-medium">' + esc(i.name) + '</p>' +
+          '<button data-act="del" data-id="' + esc(i.id) + '" class="text-xl leading-none text-red-300" aria-label="Hatao">&times;</button>' +
+        '</div>' +
+        '<div class="mt-2 flex items-center justify-between">' +
+          '<div class="flex items-center gap-3">' +
+            '<button data-act="dec" data-id="' + esc(i.id) + '" class="grid h-8 w-8 place-items-center rounded-full border border-white/30 text-lg">-</button>' +
+            '<span class="w-5 text-center text-sm">' + i.qty + '</span>' +
+            '<button data-act="inc" data-id="' + esc(i.id) + '" class="grid h-8 w-8 place-items-center rounded-full border border-white/30 text-lg">+</button>' +
+          '</div>' +
+          '<div class="text-right"><p class="text-xs text-white/50">' + money(i.price) + ' each</p>' +
+          '<p class="text-sm text-cyan-300">' + money(i.price * i.qty) + '</p></div>' +
+        '</div>';
+      box.appendChild(row);
+    });
+    recalc();
+  }
+
+  function openCart() {
+    $('o-err').textContent = '';
+    renderCart();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closeModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+
+  $('cart-btn').addEventListener('click', openCart);
+  $('o-close').addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+  citySel.addEventListener('change', recalc);
+
+  $('cart-items').addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]');
+    if (!b) return;
+    const item = cart.find(x => String(x.id) === b.dataset.id);
+    if (!item) return;
+    if (b.dataset.act === 'inc') item.qty += 1;
+    if (b.dataset.act === 'dec') item.qty = Math.max(1, item.qty - 1);
+    if (b.dataset.act === 'del') cart = cart.filter(x => x !== item);
+    saveCart();
+    updateBadge();
+    renderCart();
+  });
+
+  $('o-confirm').addEventListener('click', () => {
+    const name = $('o-name').value.trim();
+    const phone = $('o-phone').value.trim();
+    const city = citySel.value;
+    const address = $('o-address').value.trim();
+    const err = $('o-err');
+
+    if (!cart.length) { err.textContent = 'Cart khali hai.'; return; }
+    if (!name) { err.textContent = 'Apna naam likhein.'; return; }
+    if (phone.replace(/\D/g, '').length < 10) { err.textContent = 'Sahi phone number likhein.'; return; }
+    if (!city) { err.textContent = 'Shehar chunein.'; return; }
+    if (!address) { err.textContent = 'Poora address likhein.'; return; }
+
+    const del = rates[city];
+    const sub = cartSub();
+    const lines = cart.map((i, n) => (n + 1) + '. ' + i.name + ' x' + i.qty + ' = ' + money(i.price * i.qty));
+    const msg = [
+      'Assalam o Alaikum, mujhe order karna hai.',
+      '',
+      'Order:',
+      ...lines,
+      '',
+      'Products: ' + money(sub),
+      'Delivery (' + (city === 'Other' ? 'dusra shehar' : city) + '): ' + (del === undefined ? 'confirm karein' : money(del)),
+      'Total: ' + money(sub + (del || 0)) + (del === undefined ? ' + delivery' : ''),
+      'Payment: ' + paySel.value,
+      '',
+      'Naam: ' + name,
+      'Phone: ' + phone,
+      'Address: ' + address
+    ].join('\n');
+    window.open('https://wa.me/' + shop.whatsapp + '?text=' + encodeURIComponent(msg), '_blank');
+
+    cart = [];
+    saveCart();
+    updateBadge();
+    closeModal();
+  });
+
+  // ---------- Products grid ----------
+  const grid = $('product-grid');
+  let activeCat = 'All';
+  let query = '';
+
+  function drawCats() {
+    const cats = ['All', ...new Set(items.map(p => p.category).filter(Boolean))];
+    if (!cats.includes(activeCat)) activeCat = 'All';
+    $('cats').innerHTML = cats.map(c =>
+      '<button data-cat="' + esc(c) + '" class="cat-btn rounded-full border px-4 py-1.5 text-sm transition-colors ' +
+      (c === activeCat ? 'border-white bg-white text-black' : 'border-white/30 text-white hover:bg-white/10') + '">' + esc(c) + '</button>'
+    ).join('');
+  }
+
+  function drawGrid() {
+    const q = query.trim().toLowerCase();
+    const list = items.filter(p =>
+      (activeCat === 'All' || p.category === activeCat) &&
+      (!q || (p.name + ' ' + (p.category || '')).toLowerCase().includes(q)));
+    grid.innerHTML = '';
+    $('no-results').style.display = list.length ? 'none' : 'block';
+    list.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'rounded-2xl border border-white/10 bg-white/5 overflow-hidden flex flex-col';
+      card.innerHTML =
+        '<div class="relative aspect-square bg-gradient-to-br from-[#0f172a] to-[#1e3a8a] grid place-items-center">' +
+          '<span class="px-3 text-center text-sm text-white/40">' + esc(p.name) + '</span>' +
+          (p.image ? '<img src="' + p.image + '" alt="' + esc(p.name) + '" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">' : '') +
+        '</div>' +
+        '<div class="p-4 flex flex-col gap-3 flex-1">' +
+          '<div><p class="text-xs text-white/50">' + esc(p.category || '') + '</p>' +
+          '<h3 class="text-sm md:text-base font-medium text-white">' + esc(p.name) + '</h3></div>' +
+          '<p class="text-lg font-medium text-cyan-300">' + money(p.price) + '</p>' +
+          (p.inStock === false ? '<button disabled class="mt-auto cursor-not-allowed rounded-full border border-white/20 bg-white/5 text-sm font-medium text-center py-2.5 text-white/40">Out of Stock</button>' : '<button data-id="' + esc(p.id) + '" class="add-btn mt-auto rounded-full bg-white text-black text-sm font-medium text-center py-2.5 hover:bg-white/90 transition-colors">Add to Cart</button>') +
+        '</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  function renderProducts(list) {
+    items = list;
+    drawCats();
+    drawGrid();
+
+    // Keep cart prices and names in step with the current product list
+    cart = cart.map(ci => {
+      const p = list.find(x => String(x.id) === String(ci.id));
+      return p && p.inStock !== false ? { id: ci.id, name: p.name, price: Number(p.price), qty: ci.qty } : null;
+    }).filter(Boolean);
+    saveCart();
+    updateBadge();
+    if (!modal.classList.contains('hidden')) renderCart();
+  }
+  window.renderProducts = renderProducts;
+
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('.add-btn');
+    if (!b) return;
+    const p = items.find(x => String(x.id) === b.dataset.id);
+    if (p) addToCart(p);
+  });
+
+  $('cats').addEventListener('click', e => {
+    const b = e.target.closest('.cat-btn');
+    if (!b) return;
+    activeCat = b.dataset.cat;
+    drawCats();
+    drawGrid();
+  });
+  $('search').addEventListener('input', e => { query = e.target.value; drawGrid(); });
+
+  // Demo products first; live products from Firebase replace them below
+  renderProducts((typeof PRODUCTS !== 'undefined') ? PRODUCTS : []);
+
+  // ---------- Phone menu ----------
+  $('menu-btn').addEventListener('click', () => $('mobile-menu').classList.toggle('hidden'));
+  $('mobile-menu').addEventListener('click', e => { if (e.target.closest('a')) $('mobile-menu').classList.add('hidden'); });
+
+  // ---------- Hero text and backgrounds (set from admin) ----------
+  const DEF = {
+    label: '| Retail & Wholesale',
+    line1: 'Mobile accessories,',
+    line2: 'delivered all over',
+    line3: 'Pakistan.',
+    sub: 'Delivery in 4-5 days, Cash on Delivery available',
+    btn1: 'Order on WhatsApp',
+    btn2: 'View Products',
+    align: 'left',
+    overlay: 25,
+    heroType: 'video',
+    heroUrl: 'https://cdn.sceneai.art/Hero%20section%20video%20file%20(2)/13c2a27f-30ac-44f1-866d-94fca9c614d7.mp4',
+    heroImage: '',
+    restType: 'video',
+    restUrl: 'https://cdn.sceneai.art/backgrounds/5a1dc3c9-a0ce-4de3-a166-6fbef98bb22a.mov',
+    restImage: ''
+  };
+
+  const hero = document.querySelector('main');
+  const bg = { vid: [$('bg1'), $('bg2')], img: [$('bg1i'), $('bg2i')], el: [null, null], ok: [true, true], key: ['', ''] };
+  let inHero = true, heroReady = false, pageLoaded = false, lastHeading = null;
+  let words = [];
+  const waiting = [];
+
+  // Heading: three lines, word by word
+  function buildHeading(lines) {
+    words = [];
+    document.querySelectorAll('#heading [data-line]').forEach((span, idx) => {
+      const text = (lines[idx] || '').trim();
+      span.textContent = '';
+      span.style.display = text ? 'block' : 'none';
+      text.split(' ').filter(Boolean).forEach((w, i, arr) => {
+        const wd = document.createElement('span');
+        wd.className = 'word';
+        wd.textContent = w;
+        span.appendChild(wd);
+        if (i < arr.length - 1) span.appendChild(document.createTextNode('\u00A0'));
+        words.push(wd);
+      });
+    });
+    if (pageLoaded) words.forEach(w => w.classList.add('show'));
+  }
+
+  // Backgrounds: slot 0 = hero (top of page), slot 1 = rest of the page
+  function markReady() { heroReady = true; while (waiting.length) waiting.shift()(); }
+  function whenHeroReady(fn) { if (heroReady) fn(); else waiting.push(fn); }
+  bg.vid[0].addEventListener('playing', markReady);
+  setTimeout(markReady, 3500);
+
+  function activeIndex() { return inHero ? 0 : ((bg.el[1] && bg.ok[1]) ? 1 : 0); }
+
+  function refresh() {
+    const active = activeIndex();
+    [0, 1].forEach(i => {
+      const el = bg.el[i];
+      if (!el) return;
+      const on = i === active;
+      el.style.opacity = on ? 1 : 0;
+      if (el.tagName === 'VIDEO') {
+        if (on) el.play().catch(() => {});
+        else setTimeout(() => { if (i !== activeIndex()) el.pause(); }, 900);
+      }
+    });
+  }
+
+  function setSlot(i, type, src) {
+    const key = type + '|' + src;
+    if (bg.key[i] === key) return;
+    bg.key[i] = key;
+    const v = bg.vid[i], im = bg.img[i];
+    v.style.opacity = 0;
+    im.style.opacity = 0;
+    bg.ok[i] = true;
+    if (!src) { bg.el[i] = null; return; }
+    if (type === 'image') {
+      v.pause();
+      v.removeAttribute('src');
+      v.load();
+      im.src = src;
+      bg.el[i] = im;
+      if (i === 0) markReady();
+    } else {
+      im.removeAttribute('src');
+      v.src = src;
+      v.load();
+      bg.el[i] = v;
+    }
+    refresh();
+  }
+
+  // If the second video cannot play in this browser, keep the hero background everywhere
+  bg.vid[1].addEventListener('error', () => { if (bg.vid[1].getAttribute('src')) { bg.ok[1] = false; refresh(); } });
+
+  function applySettings(s) {
+    const c = { ...DEF, ...s };
+
+    $('label').textContent = c.label;
+    $('label').style.display = c.label ? '' : 'none';
+
+    const hk = [c.line1, c.line2, c.line3].join('\n');
+    if (hk !== lastHeading) { lastHeading = hk; buildHeading([c.line1, c.line2, c.line3]); }
+
+    $('hero-sub').textContent = c.sub;
+    $('stars').style.display = c.sub ? '' : 'none';
+    $('btn1-text').textContent = c.btn1;
+    $('btn2').textContent = c.btn2;
+
+    const center = c.align === 'center';
+    hero.classList.toggle('justify-center', center);
+    $('heading').parentElement.classList.toggle('text-center', center);
+    $('stars').classList.toggle('justify-center', center);
+    $('buttons').classList.toggle('justify-center', center);
+
+    $('overlay').style.opacity = Math.min(0.9, Math.max(0, Number(c.overlay) / 100));
+
+    const heroSrc = c.heroType === 'image' ? (c.heroImage || c.heroUrl) : c.heroUrl;
+    const restSrc = c.restType === 'image' ? (c.restImage || c.restUrl) : c.restUrl;
+    setSlot(0, c.heroType, heroSrc);
+    whenHeroReady(() => setSlot(1, c.restType, restSrc));
+  }
+
+  // Use the last saved settings straight away, then refresh from Firebase
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem('kmc-settings') || 'null'); } catch (e) {}
+  applySettings(cached || {});
+  window.applySettings = s => {
+    try { localStorage.setItem('kmc-settings', JSON.stringify(s)); } catch (e) {}
+    applySettings(s);
+  };
+
+  window.addEventListener('scroll', () => {
+    const now = window.scrollY < hero.offsetHeight * 0.5;
+    if (now !== inHero) { inHero = now; refresh(); }
+  }, { passive: true });
+
+  window.addEventListener('load', () => {
+    pageLoaded = true;
+
+    // Word-by-word reveal, 120ms apart
+    words.forEach((w, i) => setTimeout(() => w.classList.add('show'), 200 + i * 120));
+
+    // Everything else fades in shortly after the text begins
+    ['header', 'label', 'stars', 'buttons'].forEach((id, i) => {
+      setTimeout(() => $(id).classList.add('show'), 500 + i * 150);
+    });
+  });
+</script>
+
+<script type="module">
+  // Load site settings and live products from Firebase (if it fails, the defaults stay)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { firebaseConfig } from "./firebase-config.js";
+
+  const db = getFirestore(initializeApp(firebaseConfig));
+
+  try {
+    const s = await getDoc(doc(db, 'settings', 'site'));
+    window.applySettings(s.exists() ? s.data() : {});
+  } catch (e) {
+    console.warn('Site settings load nahi hui, purani settings chal rahi hain.', e);
+  }
+
+  try {
+    const snap = await getDocs(collection(db, 'products'));
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    list.sort((a, b) => ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));
+    if (list.length) window.renderProducts(list);
+  } catch (e) {
+    console.warn('Firebase se products load nahi hue, demo products dikh rahe hain.', e);
+  }
+</script>
+</body>
+</html>

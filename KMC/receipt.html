@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt - Kashif Mobile Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: system-ui, sans-serif; }
+  select option { color: #000; }
+  .inp { width: 100%; border-radius: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); padding: 10px 12px; font-size: 14px; color: #fff; outline: none; }
+  .inp:focus { border-color: #67e8f9; }
+  #receipt { width: 302px; background: #fff; color: #000; font-family: 'Courier New', monospace; font-size: 12px; padding: 12px; line-height: 1.35; }
+  #receipt .row { display: flex; justify-content: space-between; gap: 8px; }
+  #receipt hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+  @media print {
+    body { background: #fff !important; }
+    .no-print { display: none !important; }
+    #app { display: block !important; padding: 0 !important; }
+    #receipt-wrap { justify-content: flex-start !important; }
+    @page { margin: 4mm; }
+  }
+</style>
+</head>
+<body class="bg-[#0b1220] text-white min-h-screen">
+
+<!-- Login check -->
+<div id="gate" class="no-print min-h-screen grid place-items-center px-6 text-center">
+  <div>
+    <p id="gate-msg" class="text-white/70">Check ho raha hai...</p>
+    <a id="gate-link" href="admin.html" style="display:none" class="mt-4 rounded-full bg-white text-black text-sm font-medium px-6 py-3">Admin login karein</a>
+  </div>
+</div>
+
+<div id="app" style="display:none" class="max-w-5xl mx-auto px-4 py-6 gap-6 md:grid-cols-2">
+
+  <!-- Form -->
+  <div class="no-print space-y-4">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-medium">Receipt</h1>
+      <a href="admin.html" class="rounded-full border border-white/30 px-4 py-2 text-sm hover:bg-white/10">Admin panel</a>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <input id="c-name" class="inp" type="text" placeholder="Customer ka naam">
+      <input id="c-phone" class="inp" type="tel" placeholder="Phone (optional)">
+    </div>
+
+    <div>
+      <p class="mb-2 text-sm text-white/60">Items</p>
+      <div id="rows" class="space-y-2"></div>
+      <button id="add-row" class="mt-3 rounded-full border border-white/30 px-4 py-2 text-sm hover:bg-white/10">+ Item add karo</button>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <input id="delivery" class="inp" type="number" min="0" placeholder="Delivery charges (Rs)">
+      <input id="discount" class="inp" type="number" min="0" placeholder="Discount (Rs)">
+    </div>
+    <select id="pay" class="inp">
+      <option>Cash</option>
+      <option>Cash on Delivery</option>
+      <option>Easypaisa</option>
+      <option>JazzCash</option>
+      <option>Bank Transfer</option>
+    </select>
+
+    <p id="save-msg" class="text-sm"></p>
+    <div class="flex gap-3">
+      <button id="print" class="flex-1 rounded-full bg-white text-black text-sm font-medium py-3 hover:bg-white/90 disabled:opacity-50">Save &amp; Print</button>
+      <button id="new" class="rounded-full border border-white/30 px-5 py-3 text-sm hover:bg-white/10">Naya receipt</button>
+    </div>
+  </div>
+
+  <!-- Receipt preview -->
+  <div id="receipt-wrap" class="flex justify-center md:justify-start">
+    <div id="receipt"></div>
+  </div>
+</div>
+
+<datalist id="plist"></datalist>
+
+<script src="config.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { firebaseConfig } from "./firebase-config.js";
+
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const shop = (typeof SHOP !== 'undefined') ? SHOP : { name: 'Kashif Mobile Center', address: '', whatsapp: '' };
+  const shopPhone = shop.whatsapp && shop.whatsapp.startsWith('92') ? '0' + shop.whatsapp.slice(2) : (shop.whatsapp || '');
+  const m = n => 'Rs ' + Number(n).toLocaleString();
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  let products = [];
+  let rid = '', rdate = '';
+
+  // ---- Login check ----
+  onAuthStateChanged(auth, async user => {
+    if (!user) {
+      $('gate-msg').textContent = 'Receipt banane ke liye pehle admin login karein.';
+      $('gate-link').style.display = 'inline-block';
+      return;
+    }
+    $('gate').style.display = 'none';
+    $('app').style.display = 'grid';
+    try {
+      const snap = await getDocs(collection(db, 'products'));
+      products = snap.docs.map(d => d.data());
+      $('plist').innerHTML = products.map(p => '<option value="' + esc(p.name) + '">').join('');
+    } catch (e) { /* receipt still works without the list */ }
+  });
+
+  // ---- Receipt number and date ----
+  function newReceiptId() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    rid = 'KMC-' + String(d.getFullYear()).slice(2) + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+    rdate = p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  // ---- Item rows ----
+  function addRow() {
+    const row = document.createElement('div');
+    row.className = 'grid grid-cols-12 gap-2 items-center';
+    row.innerHTML =
+      '<input class="inp i-name col-span-6" list="plist" placeholder="Item ka naam">' +
+      '<input class="inp i-qty col-span-2" type="number" min="1" value="1">' +
+      '<input class="inp i-price col-span-3" type="number" min="0" placeholder="Price">' +
+      '<button class="i-del col-span-1 text-2xl text-red-300" aria-label="Hatao">&times;</button>';
+    const name = row.querySelector('.i-name');
+    name.addEventListener('change', () => {
+      const p = products.find(x => x.name.toLowerCase() === name.value.trim().toLowerCase());
+      if (p) { row.querySelector('.i-price').value = p.price; render(); }
+    });
+    row.querySelector('.i-del').addEventListener('click', () => { row.remove(); render(); });
+    row.addEventListener('input', render);
+    $('rows').appendChild(row);
+  }
+
+  function readItems() {
+    return [...document.querySelectorAll('#rows > div')].map(r => ({
+      name: r.querySelector('.i-name').value.trim(),
+      qty: Math.max(0, Number(r.querySelector('.i-qty').value) || 0),
+      price: Math.max(0, Number(r.querySelector('.i-price').value) || 0)
+    })).filter(i => i.name && i.qty > 0);
+  }
+
+  function totals() {
+    const items = readItems();
+    const sub = items.reduce((s, i) => s + i.qty * i.price, 0);
+    const del = Number($('delivery').value) || 0;
+    const disc = Number($('discount').value) || 0;
+    return { items, sub, del, disc, total: Math.max(0, sub + del - disc) };
+  }
+
+  // ---- Draw the receipt ----
+  function render() {
+    const { items, sub, del, disc, total } = totals();
+    const cname = $('c-name').value.trim();
+    const cphone = $('c-phone').value.trim();
+
+    let h = '';
+    h += '<div style="text-align:center"><b style="font-size:15px">' + esc(shop.name.toUpperCase()) + '</b><br>Retail &amp; Wholesale<br>' + esc(shop.address || '') + '<br>' + (shopPhone ? 'Ph: ' + esc(shopPhone) : '') + '</div>';
+    h += '<hr>';
+    h += '<div class="row"><span>Receipt: ' + rid + '</span></div>';
+    h += '<div>Date: ' + rdate + '</div>';
+    h += '<div>Customer: ' + esc(cname || 'Walk-in') + (cphone ? ' (' + esc(cphone) + ')' : '') + '</div>';
+    h += '<hr>';
+    if (!items.length) h += '<div style="text-align:center">(items add karein)</div>';
+    items.forEach(i => {
+      h += '<div>' + esc(i.name) + '</div>';
+      h += '<div class="row"><span>&nbsp;&nbsp;' + i.qty + ' x ' + m(i.price) + '</span><span>' + m(i.qty * i.price) + '</span></div>';
+    });
+    h += '<hr>';
+    h += '<div class="row"><span>Subtotal</span><span>' + m(sub) + '</span></div>';
+    if (del) h += '<div class="row"><span>Delivery</span><span>' + m(del) + '</span></div>';
+    if (disc) h += '<div class="row"><span>Discount</span><span>- ' + m(disc) + '</span></div>';
+    h += '<div class="row" style="font-size:14px"><b>TOTAL</b><b>' + m(total) + '</b></div>';
+    h += '<div>Payment: ' + esc($('pay').value) + '</div>';
+    h += '<hr>';
+    h += '<div style="text-align:center">Shukriya! Dobara tashreef layein.</div>';
+    $('receipt').innerHTML = h;
+  }
+
+  // ---- Save to Firebase, then print ----
+  async function saveAndPrint() {
+    const msg = $('save-msg');
+    const { items, sub, del, disc, total } = totals();
+    if (!items.length) {
+      msg.className = 'text-sm text-red-300';
+      msg.textContent = 'Pehle kam az kam ek item add karein.';
+      return;
+    }
+    $('print').disabled = true;
+    msg.className = 'text-sm text-white/60';
+    msg.textContent = 'Save ho rahi hai...';
+    try {
+      await setDoc(doc(db, 'receipts', rid), {
+        receiptNo: rid,
+        dateText: rdate,
+        customer: $('c-name').value.trim() || 'Walk-in',
+        phone: $('c-phone').value.trim(),
+        items: items,
+        subtotal: sub,
+        delivery: del,
+        discount: disc,
+        total: total,
+        payment: $('pay').value,
+        createdAt: serverTimestamp()
+      });
+      msg.className = 'text-sm text-green-300';
+      msg.textContent = 'Receipt save ho gayi: ' + rid;
+      window.print();
+    } catch (e) {
+      msg.className = 'text-sm text-red-300';
+      msg.textContent = e.code === 'permission-denied'
+        ? 'Save nahi hui: Firestore Rules mein receipts wala hissa check karein.'
+        : 'Save nahi hui: ' + e.message;
+    } finally {
+      $('print').disabled = false;
+    }
+  }
+
+  // ---- Buttons ----
+  ['c-name', 'c-phone', 'delivery', 'discount', 'pay'].forEach(id => $(id).addEventListener('input', render));
+  $('add-row').onclick = () => { addRow(); };
+  $('print').onclick = saveAndPrint;
+  $('new').onclick = () => {
+    ['c-name', 'c-phone', 'delivery', 'discount'].forEach(id => $(id).value = '');
+    $('rows').innerHTML = '';
+    $('save-msg').textContent = '';
+    addRow();
+    newReceiptId();
+    render();
+  };
+
+  newReceiptId();
+  addRow();
+  render();
+</script>
+</body>
+</html>

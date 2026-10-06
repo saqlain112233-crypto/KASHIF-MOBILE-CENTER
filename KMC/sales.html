@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sales - Kashif Mobile Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: system-ui, sans-serif; }
+  .inp { border-radius: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); padding: 10px 12px; font-size: 14px; color: #fff; outline: none; color-scheme: dark; }
+  .inp:focus { border-color: #67e8f9; }
+  #print-area { display: none; }
+  #receipt { width: 302px; background: #fff; color: #000; font-family: 'Courier New', monospace; font-size: 12px; padding: 12px; line-height: 1.35; }
+  #receipt .row { display: flex; justify-content: space-between; gap: 8px; }
+  #receipt hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+  @media print {
+    body { background: #fff !important; }
+    .no-print { display: none !important; }
+    #print-area { display: block !important; }
+    @page { margin: 4mm; }
+  }
+</style>
+</head>
+<body class="bg-[#0b1220] text-white min-h-screen">
+
+<!-- Login check -->
+<div id="gate" class="no-print min-h-screen grid place-items-center px-6 text-center">
+  <div>
+    <p id="gate-msg" class="text-white/70">Check ho raha hai...</p>
+    <a id="gate-link" href="admin.html" style="display:none" class="mt-4 rounded-full bg-white text-black text-sm font-medium px-6 py-3">Admin login karein</a>
+  </div>
+</div>
+
+<div id="app" style="display:none" class="no-print max-w-3xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-medium">Sales</h1>
+    <div class="flex gap-2">
+      <a href="receipt.html" class="rounded-full bg-white text-black px-4 py-2 text-sm font-medium hover:bg-white/90">Naya receipt</a>
+      <a href="admin.html" class="rounded-full border border-white/30 px-4 py-2 text-sm hover:bg-white/10">Admin panel</a>
+    </div>
+  </div>
+
+  <div class="mt-5 flex flex-wrap items-center gap-3">
+    <input id="day" type="date" class="inp">
+    <button id="today" class="rounded-full border border-white/30 px-4 py-2 text-sm hover:bg-white/10">Aaj</button>
+    <button id="all" class="rounded-full border border-white/30 px-4 py-2 text-sm hover:bg-white/10">Saari receipts</button>
+  </div>
+
+  <div class="mt-5 grid grid-cols-2 gap-3">
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p class="text-xs text-white/50">Receipts</p>
+      <p id="s-count" class="mt-1 text-2xl font-medium">0</p>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p class="text-xs text-white/50">Total sale</p>
+      <p id="s-total" class="mt-1 text-2xl font-medium text-cyan-300">Rs 0</p>
+    </div>
+  </div>
+  <p id="s-pay" class="mt-3 text-sm text-white/60"></p>
+  <p id="title" class="mt-6 mb-3 text-sm font-medium text-white/80"></p>
+  <div id="list" class="grid gap-3"></div>
+</div>
+
+<!-- Hidden receipt used for re-printing -->
+<div id="print-area"><div id="receipt"></div></div>
+
+<script src="config.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { firebaseConfig } from "./firebase-config.js";
+
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const m = n => 'Rs ' + Number(n || 0).toLocaleString();
+  const shop = (typeof SHOP !== 'undefined') ? SHOP : { name: 'Kashif Mobile Center', address: '', whatsapp: '' };
+  const shopPhone = shop.whatsapp && shop.whatsapp.startsWith('92') ? '0' + shop.whatsapp.slice(2) : (shop.whatsapp || '');
+
+  const auth = getAuth(initializeApp(firebaseConfig));
+  const db = getFirestore(auth.app);
+  let all = [];
+  let mode = 'day';
+
+  // ---- Login check ----
+  onAuthStateChanged(auth, user => {
+    if (!user) {
+      $('gate-msg').textContent = 'Sales dekhne ke liye pehle admin login karein.';
+      $('gate-link').style.display = 'inline-block';
+      return;
+    }
+    $('gate').style.display = 'none';
+    $('app').style.display = 'block';
+    setToday();
+    load();
+  });
+
+  // ---- Dates ----
+  function setToday() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    $('day').value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    mode = 'day';
+  }
+  function dayKey() {            // 2026-10-03 -> 03/10/2026
+    const [y, mo, d] = $('day').value.split('-');
+    return d + '/' + mo + '/' + y;
+  }
+
+  // ---- Load receipts ----
+  async function load() {
+    $('list').textContent = 'Load ho raha hai...';
+    try {
+      const snap = await getDocs(query(collection(db, 'receipts'), orderBy('createdAt', 'desc'), limit(500)));
+      all = snap.docs.map(d => d.data());
+    } catch (e) {
+      $('list').textContent = e.code === 'permission-denied'
+        ? 'Permission nahi mili. Firestore Rules mein receipts wala hissa check karein.'
+        : 'Load nahi hua: ' + e.message;
+      return;
+    }
+    show();
+  }
+
+  // ---- Show list and totals ----
+  function show() {
+    const rows = mode === 'all' ? all : all.filter(r => (r.dateText || '').startsWith(dayKey()));
+    const total = rows.reduce((s, r) => s + (Number(r.total) || 0), 0);
+    const byPay = {};
+    rows.forEach(r => { byPay[r.payment || 'Other'] = (byPay[r.payment || 'Other'] || 0) + (Number(r.total) || 0); });
+
+    $('s-count').textContent = rows.length;
+    $('s-total').textContent = m(total);
+    $('s-pay').textContent = Object.keys(byPay).map(k => k + ': ' + m(byPay[k])).join('  |  ');
+    $('title').textContent = mode === 'all' ? 'Saari receipts' : 'Receipts: ' + dayKey();
+
+    const list = $('list');
+    list.innerHTML = '';
+    if (!rows.length) {
+      list.innerHTML = '<p class="text-sm text-white/50">Is din koi receipt nahi.</p>';
+      return;
+    }
+    rows.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'rounded-2xl border border-white/10 bg-white/5 p-4';
+      const itemsText = (r.items || []).map(i => i.name + ' x' + i.qty).join(', ');
+      card.innerHTML =
+        '<div class="flex items-start justify-between gap-3">' +
+          '<div class="min-w-0"><p class="text-sm font-medium">' + esc(r.customer || 'Walk-in') + '</p>' +
+          '<p class="text-xs text-white/50">' + esc(r.receiptNo) + ' - ' + esc(r.dateText) + ' - ' + esc(r.payment || '') + '</p></div>' +
+          '<p class="shrink-0 font-medium text-cyan-300">' + m(r.total) + '</p>' +
+        '</div>' +
+        '<p class="mt-2 text-xs text-white/60">' + esc(itemsText) + '</p>' +
+        '<button class="reprint mt-3 rounded-full border border-white/30 px-4 py-1.5 text-xs hover:bg-white/10">Dobara print</button>';
+      card.querySelector('.reprint').onclick = () => reprint(r);
+      list.appendChild(card);
+    });
+  }
+
+  // ---- Re-print an old receipt ----
+  function reprint(r) {
+    let h = '';
+    h += '<div style="text-align:center"><b style="font-size:15px">' + esc(shop.name.toUpperCase()) + '</b><br>Retail &amp; Wholesale<br>' + esc(shop.address || '') + '<br>' + (shopPhone ? 'Ph: ' + esc(shopPhone) : '') + '</div>';
+    h += '<hr>';
+    h += '<div>Receipt: ' + esc(r.receiptNo) + '</div>';
+    h += '<div>Date: ' + esc(r.dateText) + '</div>';
+    h += '<div>Customer: ' + esc(r.customer || 'Walk-in') + (r.phone ? ' (' + esc(r.phone) + ')' : '') + '</div>';
+    h += '<hr>';
+    (r.items || []).forEach(i => {
+      h += '<div>' + esc(i.name) + '</div>';
+      h += '<div class="row"><span>&nbsp;&nbsp;' + i.qty + ' x ' + m(i.price) + '</span><span>' + m(i.qty * i.price) + '</span></div>';
+    });
+    h += '<hr>';
+    h += '<div class="row"><span>Subtotal</span><span>' + m(r.subtotal) + '</span></div>';
+    if (r.delivery) h += '<div class="row"><span>Delivery</span><span>' + m(r.delivery) + '</span></div>';
+    if (r.discount) h += '<div class="row"><span>Discount</span><span>- ' + m(r.discount) + '</span></div>';
+    h += '<div class="row" style="font-size:14px"><b>TOTAL</b><b>' + m(r.total) + '</b></div>';
+    h += '<div>Payment: ' + esc(r.payment || '') + '</div>';
+    h += '<hr>';
+    h += '<div style="text-align:center">Shukriya! Dobara tashreef layein.</div>';
+    $('receipt').innerHTML = h;
+    window.print();
+  }
+
+  // ---- Buttons ----
+  $('day').addEventListener('change', () => { mode = 'day'; show(); });
+  $('today').onclick = () => { setToday(); show(); };
+  $('all').onclick = () => { mode = 'all'; show(); };
+</script>
+</body>
+</html>
